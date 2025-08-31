@@ -1,0 +1,4 @@
+This dimension evaluates how well the prompt is understood, addressed, and developed within the response.
+This criterion assesses how well ideas are logically organized and connected within a written response.
+This dimension evaluates the range, precision, and appropriateness of vocabulary used within a written response.
+This dimension assesses the breadth of grammatical structures used and the precision in applying them within written communication.
