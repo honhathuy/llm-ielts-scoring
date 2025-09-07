@@ -7,18 +7,15 @@ from tqdm import tqdm
 from sklearn.metrics import mean_squared_error, cohen_kappa_score
 
 
-# pip install torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cu118
-# pip install transformers huggingface_hub
-# pip install "unsloth[cu118-torch271]
-# pip install accelerate[torch]
-# pip install -U scikit-learn
-# pip install gguf
+# !pip install unsloth
+# !pip install --upgrade --no-deps "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"
 
-BATCH_SIZE = 2
+BATCH_SIZE = 1
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def setup_pipeline():
-    model_id = "unsloth/Qwen3-8B-unsloth-bnb-4bit"
+    # model_id = "unsloth/Qwen3-8B-unsloth-bnb-4bit"
+    model_id = "unsloth/Meta-Llama-3.1-8B-Instruct"
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=model_id,
         # dtype = torch.float16,
@@ -65,14 +62,16 @@ def calculate_metrics(df):
     y_true = eval_df['band']
     y_pred = eval_df['final_band_score']
     rmse = np.sqrt(mean_squared_error(y_true, y_pred))
-    qwk = cohen_kappa_score(y_true, y_pred, weights='quadratic')
+    y_true_int = (y_true * 2).astype(int)
+    y_pred_int = (y_pred * 2).astype(int)
+    qwk = cohen_kappa_score(y_true_int, y_pred_int, weights='quadratic')
     return rmse, qwk
 
 
 if __name__ == "__main__":
     model, tokenizer = setup_pipeline()
 
-    df = pd.read_csv('data/test.csv')
+    df = pd.read_csv('data/band_wise_records.csv')
     df = df.head(4)
     df['band'] = df['band'].astype(str).str.replace('>4', '3', regex=False)
     df['band'] = pd.to_numeric(df['band'], errors='coerce')
@@ -148,7 +147,6 @@ if __name__ == "__main__":
             score = None
             if response:
                 try:
-                    # Model output ['Score: 6.5', 'Score: 6.5']
                     score_match = re.search(r'<score>([0-9\.]+)</score>', response)
                     if score_match:
                         score = float(score_match.group(1))
@@ -163,6 +161,7 @@ if __name__ == "__main__":
     df['final_band_score'] = df['avg_band_score'].apply(
         lambda x: round(x * 2) / 2 if pd.notna(x) else None
     )
+    df.to_csv('mts_llama_result.csv')
     print("-> Final band scores calculated.")
 
     # --- Step 3: Evaluate and Display ---
