@@ -1,36 +1,20 @@
-Band 9:
-    - Full flexibility and precise use are widely evident.
-    - A wide range of vocabulary is used accurately and appropriately with very natural and sophisticated control of lexical features.
-    - Minor errors in spelling and word formation are extremely rare and have minimal impact on communication.
-Band 8:
-    - A wide resource is fluently and flexibly used to convey precise meanings.
-    - There is skilful use of uncommon and/or idiomatic items when appropriate, despite occasional inaccuracies in word choice and collocation.
-    - Occasional errors in spelling and/or word formation may occur, but have minimal impact on communication.
-Band 7:
-    - The resource is sufficient to allow some flexibility and precision.
-    - There is some ability to use less common and/or idiomatic items.
-    - An awareness of style and collocation is evident, though inappropriacies occur.
-    - There are only a few errors in spelling and/or word formation and they do not detract from overall clarity.
-Band 6:
-    - The resource is generally adequate and appropriate for the task.
-    - The meaning is generally clear in spite of a rather restricted range or a lack of precision in word choice.
-    - If the writer is a risk-taker, there will be a wider range of vocabulary used but higher degrees of inaccuracy or inappropriacy.
-    - There are some errors in spelling and/or word formation, but these do not impede communication.
-Band 5:
-    - The resource is limited but minimally adequate for the task.
-    - Simple vocabulary may be used accurately but the range does not permit much variation in expression.
-    - There may be frequent lapses in the appropriacy of word choice and a lack of flexibility is apparent in frequent simplifications and/or repetitions.
-    - Errors in spelling and/or word formation may be noticeable and may cause some difficulty for the reader.
-Band 4:
-    - The resource is limited and inadequate for or unrelated to the task. Vocabulary is basic and may be used repetitively.
-    - There may be inappropriate use of lexical chunks (e.g. memorised phrases, formulaic language and/or language from the input material).
-    - Inappropriate word choice and/or errors in word formation and/or in spelling may impede meaning.
-Band 3:
-    - The resource is inadequate (which may be due to the response being significantly underlength). Possible over-dependence on input material or memorised language.
-    - Control of word choice and/or spelling is very limited, and errors predominate. These errors may severely impede meaning.
-Band 2:
-    - The resource is extremely limited with few recognisable strings, apart from memorised phrases.
-    - There is no apparent control of word formation and/or spelling.
-Band 1:
-    - Responses of 20 words or fewer are rated at Band 1.
-    - No resource is apparent, except for a few isolated words.
+0-2:
+    - Minimal to no resource evident; extremely limited vocabulary or reliance on memorized phrases.
+    - Lack of control in word formation, spelling, and recognition of vocabulary.
+    - Communication severely impeded due to the absence of lexical range.
+3-4:
+    - Inadequate or limited resource; vocabulary may be basic or unrelated to the task.
+    - Possible dependence on input material or memorized language.
+    - Errors in word choice, formation, or spelling impede meaning.
+5-6:
+    - Adequate but restricted resource for the task.
+    - Limited variety and precision in vocabulary, causing simplifications and repetitions.
+    - Noticeable errors in spelling/word formation, with some impact on clarity.
+7-8:
+    - Sufficient resource allowing flexibility and precision in expression.
+    - Ability to use less common or idiomatic items, despite occasional inaccuracies.
+    - Some errors in spelling/word formation with minimal impact on communication.
+9-10:
+    - Full flexibility and precise use of a wide range of vocabulary.
+    - Very natural and sophisticated control of lexical features with rare minor errors.
+    - Skilful use of uncommon or idiomatic items, enhancing overall expression.

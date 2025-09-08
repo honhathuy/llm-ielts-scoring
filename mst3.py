@@ -55,6 +55,73 @@ def process_prompts_in_batches(model, tokenizer, prompts, batch_size, descriptio
     return all_responses
 
 
+def trait_aggregation_and_scaling(df, avg_score_col, target_range_col):
+    """
+    Applies trait aggregation and scaling as per Section 2.3 of the paper.
+    This involves:
+    1. Outlier Clipping: Removes extreme values from the averaged scores.
+    2. Min-Max Scaling: Maps the clipped scores to the target score range.
+    3. Rounding: Rounds the final score to the nearest half-band (e.g., 6.0, 6.5).
+    """
+    print("-> Applying Trait Aggregation and Scaling mechanism...")
+    
+    # Ensure columns exist
+    if avg_score_col not in df.columns or target_range_col not in df.columns:
+        raise ValueError(f"Required columns '{avg_score_col}' or '{target_range_col}' not in DataFrame.")
+
+    # Drop rows where average score is NaN for calculation
+    valid_scores = df[avg_score_col].dropna()
+    if valid_scores.empty:
+        df['final_band_score'] = np.nan
+        return df
+
+    # --- 1. Outlier Clipping ---
+    # Calculate Q1, Q3, and IQR to find outliers
+    Q1 = valid_scores.quantile(0.25)
+    Q3 = valid_scores.quantile(0.75)
+    IQR = Q3 - Q1
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR
+    
+    # Clip the averaged scores to remove outliers
+    df['clipped_avg_score'] = df[avg_score_col].clip(lower=lower_bound, upper=upper_bound)
+
+    # --- 2. Min-Max Scaling ---
+    # Determine the target score range from the ground truth 'band' column
+    target_min = df[target_range_col].min()
+    target_max = df[target_range_col].max()
+
+    # Get min and max of the clipped scores for scaling
+    clipped_scores_valid = df['clipped_avg_score'].dropna()
+    if clipped_scores_valid.empty:
+        df['final_band_score'] = np.nan
+        df.drop(columns=['clipped_avg_score'], inplace=True)
+        return df
+
+    source_min = clipped_scores_valid.min()
+    source_max = clipped_scores_valid.max()
+
+    # Apply min-max scaling formula
+    if source_max == source_min:
+        # If all scores are the same, assign the average of the target range
+        df['final_band_score'] = (target_min + target_max) / 2
+    else:
+        df['final_band_score'] = target_min + \
+            (df['clipped_avg_score'] - source_min) * (target_max - target_min) / (source_max - source_min)
+
+    # --- 3. Final Rounding ---
+    # For IELTS, scores are in 0.5 increments. This rounding achieves that.
+    # For other datasets like ASAP, you might round to the nearest integer: .round()
+    df['final_band_score'] = df['final_band_score'].apply(
+        lambda x: round(x * 2) / 2 if pd.notna(x) else None
+    )
+
+    # Clean up intermediate column
+    df.drop(columns=['clipped_avg_score'], inplace=True)
+
+    return df
+
+
 def calculate_metrics(df):
     eval_df = df.dropna(subset=['band', 'final_band_score'])
     if len(eval_df) == 0:
@@ -98,7 +165,7 @@ if __name__ == "__main__":
     for index, row in df.iterrows():
         for trait, description in ielts_traits:
             messages = [
-                {"role": "system", "content": f"You are an expert IELTS examiner on writting task 2. Four examiners will be provided with a [Prompt] and an [Essay] written by a examinee in response to the [Prompt]. Each examiner will score the essays based on different dimensions of writing quality. Your specific responsibility is to score the essays in terms of '{trait}'. {description} Focus on the content of the [Essay] and the [Scoring Rubric] to determine the score."},
+                {"role": "system", "content": f"You are a member of the English essay writing test evaluation committee. Four teachers will be provided with a [Prompt] and an [Essay] written by a student in response to the [Prompt]. Each teacher will score the essays based on different dimensions of writing quality. Your specific responsibility is to score the essays in terms of '{trait}'. {description} Focus on the content of the [Essay] and the [Scoring Rubric] to determine the score."},
                 {"role": "user", "content": f"[Prompt]\n{row['prompt']}\n(end of [Prompt])\n\n[Essay]\n{row['essay']}\n(end of [Essay])\n\nQ. List the quotations from the [Essay] that are relevant to \"{trait}\" and evaluate whether each quotation is well-written or not (no need to give a score yet)."}
             ]
             turn_1_chats_list.append(messages)
@@ -107,7 +174,7 @@ if __name__ == "__main__":
                 messages,
                 tokenize=False,
                 add_generation_prompt=True,
-                enable_thinking = False, # Disable thinking
+                # enable_thinking = False, # Disable thinking
             )
             turn_1_prompts_str.append(text)
 
@@ -124,14 +191,14 @@ if __name__ == "__main__":
         new_chat_list.append({"role": "assistant", "content": llm_response_t1})
         new_chat_list.append({
             "role": "user", 
-            "content": f"[Scoring Rubric]\n**{trait}**:\n{trait_rubrics[trait]}\n(end of [Scoring Rubric])\n\nQ. Based on the [Scoring Rubric] and the quotations you found, how would you rate the \"{trait}\" of this essay? Assign a score from 1.0 to 9.0, strictly following the [Output Format] below.\n\n[Output Format]\n<score>insert ONLY the numeric score (from 1.0 to 9.0) here</score>\n(End of [Output Format])"
+            "content": f"[Scoring Rubric]\n**{trait}**:\n{trait_rubrics[trait]}\n(end of [Scoring Rubric])\n\nQ. Based on the [Scoring Rubric] and the quotations you found, how would you rate the \"{trait}\" of this essay? Assign a score from 0 to 10, strictly following the [Output Format] below.\n\n[Output Format]\n<score>Numeric score (from 0 to 10)</score>\n(End of [Output Format])"
         })
         
         final_prompt_str = tokenizer.apply_chat_template(
             new_chat_list,
             tokenize=False,
             add_generation_prompt=True,
-            enable_thinking = False, # Disable thinking
+            # enable_thinking = False, # Disable thinking
         )
         turn_2_prompts_str.append(final_prompt_str)
 
@@ -150,6 +217,12 @@ if __name__ == "__main__":
                     score_match = re.search(r'<score>([0-9\.]+)</score>', response)
                     if score_match:
                         score = float(score_match.group(1))
+                    else:
+                        # If fail, find all numbers in the response and take the last one.
+                        # This is a fallback for messy outputs.
+                        numeric_values = re.findall(r'[0-9\.]+', response)
+                        if numeric_values:
+                            score = float(numeric_values[-1])
                 except Exception:
                     score = None
             all_trait_scores[i].append(score)
@@ -158,9 +231,9 @@ if __name__ == "__main__":
     df['avg_band_score'] = df['trait_scores'].apply(
         lambda scores: np.mean([s for s in scores if s is not None]) if any(s is not None for s in scores) else None
     )
-    df['final_band_score'] = df['avg_band_score'].apply(
-        lambda x: round(x * 2) / 2 if pd.notna(x) else None
-    )
+
+    df = trait_aggregation_and_scaling(df, 'avg_band_score', 'band')
+
     df.to_csv('mts_llama_result.csv')
     print("-> Final band scores calculated.")
 
